@@ -1,0 +1,105 @@
+spring:
+  application:
+    name: tukio-api-gateway
+  profiles:
+    active: dev
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+    discovery:
+      enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+server:
+  port: 8080
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka:password123@localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# JWT Configuration
+jwt:
+  secret: tukio_secure_key_for_jwt_token_generation_and_validation_2024
+  expiration: 86400000 # 24 hours in milliseconds
+
+# Resilience4j Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        recordExceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 6s
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: INFO
+    org.springframework.security: INFO
+    com.tukio: DEBUG
+    reactor.netty.http.client: INFO
+
+# Swagger/OpenAPI Configuration
+springdoc:
+  enable-native-support: true
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - url: /v3/api-docs
+        name: API Gateway
+      - url: /venue-service/v3/api-docs
+        name: Venue Service
+      - url: /events-service/v3/api-docs
+        name: Events Service
+      - url: /user-service/v3/api-docs
+        name: User Service
+      - url: /recommendation-service/v3/api-docs
+        name: Recommendation Service
+      - url: /gamification-service/v3/api-docs
+        name: Gamification Service
