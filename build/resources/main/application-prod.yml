@@ -1,0 +1,49 @@
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+
+# Eureka Client Configuration for Production
+eureka:
+  instance:
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka:password123@discovery-service:8761/eureka/}
+
+# Production Security Configuration
+jwt:
+  secret: ${JWT_SECRET:tukio_secure_key_for_jwt_token_generation_and_validation_2024}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# Resilience4j Circuit Breaker Configuration for Production
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        minimumNumberOfCalls: 10
+        slidingWindowSize: 20
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 5
+        failureRateThreshold: 40
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
+
+# Logging Configuration for Production
+logging:
+  level:
+    root: WARN
+    org.springframework.cloud.gateway: WARN
+    org.springframework.security: WARN
+    com.tukio: INFO
+    reactor.netty.http.client: WARN
