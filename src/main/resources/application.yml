@@ -41,9 +41,9 @@ management:
   endpoint:
     health:
       show-details: always
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true
 
 # JWT Configuration
@@ -77,29 +77,33 @@ logging:
     root: INFO
     org.springframework.cloud.gateway: INFO
     org.springframework.security: INFO
-    com.tukio: DEBUG
+    com.tukio: ERROR
     reactor.netty.http.client: INFO
 
 # Swagger/OpenAPI Configuration
 springdoc:
-  enable-native-support: true
   api-docs:
     enabled: true
-    path: /v3/api-docs
+    groups:
+      enabled: true
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
     config-url: /v3/api-docs/swagger-config
     urls:
-      - url: /v3/api-docs
-        name: API Gateway
-      - url: /venue-service/v3/api-docs
-        name: Venue Service
-      - url: /events-service/v3/api-docs
-        name: Events Service
-      - url: /user-service/v3/api-docs
-        name: User Service
-      - url: /recommendation-service/v3/api-docs
-        name: Recommendation Service
-      - url: /gamification-service/v3/api-docs
-        name: Gamification Service
+      - name: Api Gateway
+        url: /v3/api-docs
+      - name: User Service
+        url: /user-service/v3/api-docs
+      - name: Events Service
+        url: /events-service/v3/api-docs
+      - name: Venue Service
+        url: /venue-service/v3/api-docs
+      - name: Recommendation Service
+        url: /recommendation-service/v3/api-docs
+      - name: Gamification Service
+        url: /gamification-service/v3/api-docs
+  cache:
+    disabled: true
+  webjars:
+    prefix: /swagger-ui

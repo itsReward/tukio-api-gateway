@@ -62,10 +62,13 @@ class JwtAuthenticationFilter(
         }
     }
 
+
+
     private fun addAuthorizationHeaders(request: ServerHttpRequest, username: String, roles: List<String>): ServerHttpRequest {
         return request.mutate()
             .header("X-Auth-User", username)
             .header("X-Auth-Roles", roles.joinToString(","))
+            .header(HttpHeaders.AUTHORIZATION, request.headers.getFirst(HttpHeaders.AUTHORIZATION))
             .build()
     }
 }

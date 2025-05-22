@@ -20,14 +20,7 @@ class SecurityConfig(private val routeValidator: RouteValidator) {
             .csrf { it.disable() }
             .cors { it.configurationSource(corsConfigurationSource()) }
             .authorizeExchange { exchange ->
-                exchange
-                    .pathMatchers("/api/auth/**").permitAll()
-                    .pathMatchers("/actuator/**").permitAll()
-                    .pathMatchers("/v3/api-docs/**").permitAll()
-                    .pathMatchers("/v3/api-docs.yaml").permitAll()
-                    .pathMatchers("/swagger-ui/**").permitAll()
-                    .pathMatchers("/webjars/**").permitAll()
-                    .anyExchange().authenticated()
+                exchange.anyExchange().permitAll()
             }
             .build()
     }

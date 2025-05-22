@@ -36,7 +36,7 @@ class GatewayExceptionHandler : ErrorWebExceptionHandler {
             timestamp = LocalDateTime.now(),
             path = exchange.request.uri.path,
             status = status.value(),
-            error = status.reasonPhrase,
+            error = status.toString().substringAfter(" ").trim(), // Extract reason phrase from status string
             message = ex.message ?: "An error occurred"
         )
 

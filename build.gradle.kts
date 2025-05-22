@@ -43,6 +43,8 @@ dependencies {
     // Swagger/OpenAPI
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0")
 
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0")
+
     // Kotlin
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")

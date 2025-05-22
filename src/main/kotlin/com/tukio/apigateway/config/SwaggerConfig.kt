@@ -1,51 +1,59 @@
 package com.tukio.apigateway.config
 
-import org.springdoc.core.models.GroupedOpenApi
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.cloud.gateway.route.RouteDefinition
-import org.springframework.cloud.gateway.route.RouteDefinitionLocator
+import io.swagger.v3.oas.models.Components
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.info.Contact
+import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.info.License
+import io.swagger.v3.oas.models.security.SecurityRequirement
+import io.swagger.v3.oas.models.security.SecurityScheme
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import java.util.ArrayList
+import org.springframework.web.reactive.config.ResourceHandlerRegistry
+import org.springframework.web.reactive.config.WebFluxConfigurer
+
 
 @Configuration
-class SwaggerConfig(private val routeDefinitionLocator: RouteDefinitionLocator) {
-
-    @Value("\${spring.application.name}")
-    private lateinit var applicationName: String
+class SwaggerConfig {
+    @Bean
+    fun openAPI(): OpenAPI {
+        return OpenAPI()
+            .info(
+                Info()
+                    .title("Tukio API Gateway")
+                    .description("API Gateway for Tukio Campus Event Scheduling Platform")
+                    .version("v1.0")
+                    .contact(
+                        Contact()
+                            .name("Campus Events Team")
+                            .email("events@campus.edu")
+                    )
+                    .license(
+                        License()
+                            .name("Apache 2.0")
+                            .url("https://www.apache.org/licenses/LICENSE-2.0")
+                    )
+            )
+            .addSecurityItem(SecurityRequirement().addList("bearerAuth"))
+            .components(
+                Components()
+                    .addSecuritySchemes(
+                        "bearerAuth",
+                        SecurityScheme()
+                            .type(SecurityScheme.Type.HTTP)
+                            .scheme("bearer")
+                            .bearerFormat("JWT")
+                    )
+            )
+    }
 
     @Bean
-    fun apiDocConfig(): List<GroupedOpenApi> {
-        val groups = ArrayList<GroupedOpenApi>()
-
-        val allRoutes = routeDefinitionLocator.routeDefinitions.collectList().block() ?: emptyList()
-
-        // Create a map of services to their API paths
-        val servicePaths = mapOf(
-            "tukio-venue-service" to listOf("/api/venues/**"),
-            "tukio-events-service" to listOf("/api/events/**", "/api/event-categories/**", "/api/event-registrations/**"),
-            "tukio-user-service" to listOf("/api/users/**", "/api/auth/**"),
-            "tukio-recommendation-service" to listOf("/api/recommendations/**", "/api/preferences/**", "/api/activities/**"),
-            "tukio-gamification-service" to listOf("/api/gamification/**", "/api/points/**", "/api/badges/**", "/api/leaderboards/**")
-        )
-
-        // Create OpenAPI group for each service
-        for ((serviceName, paths) in servicePaths) {
-            val matchingRoutes = allRoutes.filter { it.id.contains(serviceName) }
-            if (matchingRoutes.isNotEmpty()) {
-                groups.add(GroupedOpenApi.builder()
-                    .pathsToMatch(*paths.toTypedArray())
-                    .group(serviceName)
-                    .build())
+    fun customSwaggerWebFluxConfigurer(): WebFluxConfigurer {
+        return object : WebFluxConfigurer {
+            override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
+                registry.addResourceHandler("/swagger-ui/**")
+                    .addResourceLocations("classpath:/META-INF/resources/webjars/swagger-ui/")
             }
         }
-
-        // Add an API gateway group for all paths
-        groups.add(GroupedOpenApi.builder()
-            .pathsToMatch("/**")
-            .group(applicationName)
-            .build())
-
-        return groups
     }
 }

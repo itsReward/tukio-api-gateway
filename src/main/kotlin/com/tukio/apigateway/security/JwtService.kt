@@ -57,7 +57,6 @@ class JwtService {
     }
 
     private fun getSigningKey(): Key {
-        val keyBytes = Decoders.BASE64.decode(secretKey)
-        return Keys.hmacShaKeyFor(keyBytes)
+        return Keys.hmacShaKeyFor(secretKey.toByteArray())
     }
 }

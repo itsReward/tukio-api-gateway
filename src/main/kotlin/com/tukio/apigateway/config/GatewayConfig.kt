@@ -13,100 +13,67 @@ class GatewayConfig {
 
     @Bean
     fun routeLocator(builder: RouteLocatorBuilder): RouteLocator {
-        return builder.routes()
-            // Venue Service Routes
-            .route("tukio-venue-service") { r ->
-                r.path("/api/venues/**")
-                    .filters { f ->
-                        f.rewritePath("/api/venues/(?<segment>.*)", "/api/venues/\${segment}")
-                            .circuitBreaker { it.setName("venueServiceCircuitBreaker") }
-                            .requestRateLimiter { c ->
-                                c.rateLimiter = RedisRateLimiter(5, 10)
-                                c.keyResolver = ipAddressKeyResolver()
-                            }
-                    }
-                    .uri("lb://tukio-venue-service")
+        val services = mapOf(
+            "venue-service" to "tukio-venue-service",
+            "events-service" to "tukio-events-service",
+            "user-service" to "tukio-user-service",
+            "recommendation-service" to "tukio-recommendation-service",
+            "gamification-service" to "tukio-gamification-service",
+            "notification-service" to "tukio-notification-service"
+        )
+        
+        val routes = builder.routes()
+            // Add these routes to handle OpenAPI documentation from each service
+            .route("user-service-docs") { r ->
+                r.path("/user-service/v3/api-docs")
+                    .filters { f -> f.rewritePath("/user-service/v3/api-docs", "/v3/api-docs") }
+                    .uri("lb://tukio-user-service")
             }
-
-            // Event Service Routes
-            .route("tukio-event-service") { r ->
-                r.path("/api/events/**", "/api/event-categories/**", "/api/event-registrations/**")
-                    .filters { f ->
-                        f.rewritePath("/api/(?<segment>.*)", "/api/\${segment}")
-                            .circuitBreaker { it.setName("eventServiceCircuitBreaker") }
-                            .requestRateLimiter { c ->
-                                c.rateLimiter = RedisRateLimiter(5, 10)
-                                c.keyResolver = ipAddressKeyResolver()
-                            }
-                    }
+            .route("events-service-docs") { r ->
+                r.path("/events-service/v3/api-docs")
+                    .filters { f -> f.rewritePath("/events-service/v3/api-docs", "/v3/api-docs") }
                     .uri("lb://tukio-events-service")
             }
-
-            // User Service Routes
-            .route("tukio-user-service-api") { r ->
-                r.path("/api/users/**")
-                    .filters { f ->
-                        f.rewritePath("/api/users/(?<segment>.*)", "/api/users/\${segment}")
-                            .circuitBreaker { it.setName("userServiceCircuitBreaker") }
-                            .requestRateLimiter { c ->
-                                c.rateLimiter = RedisRateLimiter(3, 5)
-                                c.keyResolver = ipAddressKeyResolver()
-                            }
-                    }
-                    .uri("lb://tukio-user-service")
+            .route("venue-service-docs") { r ->
+                r.path("/venue-service/v3/api-docs")
+                    .filters { f -> f.rewritePath("/venue-service/v3/api-docs", "/v3/api-docs") }
+                    .uri("lb://tukio-venue-service")
             }
-
-            // Auth Routes
-            .route("tukio-user-service-auth") { r ->
-                r.path("/api/auth/**")
-                    .filters { f ->
-                        f.rewritePath("/api/auth/(?<segment>.*)", "/api/auth/\${segment}")
-                            .circuitBreaker { it.setName("authServiceCircuitBreaker") }
-                            .requestRateLimiter { c ->
-                                c.rateLimiter = RedisRateLimiter(10, 20) // Higher limit for auth endpoints
-                                c.keyResolver = ipAddressKeyResolver()
-                            }
-                    }
-                    .uri("lb://tukio-user-service")
-            }
-
-            // Recommendation Service Routes
-            .route("tukio-recommendation-service") { r ->
-                r.path("/api/recommendations/**", "/api/preferences/**", "/api/activities/**")
-                    .filters { f ->
-                        f.rewritePath("/api/(?<segment>.*)", "/api/\${segment}")
-                            .circuitBreaker { it.setName("recommendationServiceCircuitBreaker") }
-                            .requestRateLimiter { c ->
-                                c.rateLimiter = RedisRateLimiter(5, 10)
-                                c.keyResolver = ipAddressKeyResolver()
-                            }
-                    }
+            .route("recommendation-service-docs") { r ->
+                r.path("/recommendation-service/v3/api-docs")
+                    .filters { f -> f.rewritePath("/recommendation-service/v3/api-docs", "/v3/api-docs") }
                     .uri("lb://tukio-recommendation-service")
             }
-
-            // Gamification Service Routes
-            .route("tukio-gamification-service") { r ->
-                r.path("/api/gamification/**", "/api/points/**", "/api/badges/**", "/api/leaderboards/**")
+            .route("gamification-service-docs") { r ->
+                r.path("/gamification-service/v3/api-docs")
+                    .filters { f -> f.rewritePath("/gamification-service/v3/api-docs", "/v3/api-docs") }
+                    .uri("lb://tukio-gamification-service")
+            }
+            .route("notification-service") { r ->
+                r.path("/api/notifications/**", "/api/notification-templates/**", "/api/notification-preferences/**")
                     .filters { f ->
                         f.rewritePath("/api/(?<segment>.*)", "/api/\${segment}")
-                            .circuitBreaker { it.setName("gamificationServiceCircuitBreaker") }
+                            .circuitBreaker { it.setName("notificationServiceCircuitBreaker") }
                             .requestRateLimiter { c ->
                                 c.rateLimiter = RedisRateLimiter(5, 10)
                                 c.keyResolver = ipAddressKeyResolver()
                             }
                     }
-                    .uri("lb://tukio-gamification-service")
+                    .uri("lb://tukio-notification-service")
             }
 
-            // Swagger API Documentation Routes
-            .route("tukio-api-docs") { r ->
-                r.path("/v3/api-docs/**")
+        // Add Swagger API Documentation Routes
+        services.forEach { (servicePath, serviceUri) ->
+            routes.route("${serviceUri}-api-docs") { r ->
+                r.path("/v3/api-docs/$servicePath")
                     .filters { f ->
-                        f.rewritePath("/v3/api-docs/(?<service>.*)", "/v3/api-docs")
+                        f.rewritePath("/v3/api-docs/$servicePath", "/v3/api-docs")
                     }
-                    .uri("lb://tukio-\${service}")
+                    .uri("lb://$serviceUri")
             }
-            .build()
+        }
+        
+        return routes.build()
     }
 
     @Bean
